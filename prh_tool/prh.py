@@ -119,7 +119,7 @@ def get_github_repo_info():
 
     return owner, repo
 
-def create_pull_request(title, body, head_branch, base_branch="main"): # Assuming 'main' as base branch for simplicity
+def create_pull_request(title, body, head_branch):
     owner, repo = get_github_repo_info()
     if not owner or not repo:
         return False
@@ -130,6 +130,23 @@ def create_pull_request(title, body, head_branch, base_branch="main"): # Assumin
         if not github_token:
             print("GitHub Personal Access Token cannot be empty. Aborting PR creation.")
             return False
+
+    # Get the default branch of the repository
+    repo_info_url = f"https://api.github.com/repos/{owner}/{repo}"
+    headers = {
+        "Authorization": f"token {github_token}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    response = requests.get(repo_info_url, headers=headers)
+    if response.status_code == 200:
+        repo_data = response.json()
+        base_branch = repo_data.get("default_branch", "main") # Fallback to 'main' if not found
+        print(f"Determined base branch: {base_branch}")
+    else:
+        print(f"Failed to get repository info to determine default branch: {response.status_code}")
+        print(response.json())
+        base_branch = "main" # Default to main if unable to fetch
+        print(f"Defaulting to base branch: {base_branch}")
 
     url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
     headers = {
